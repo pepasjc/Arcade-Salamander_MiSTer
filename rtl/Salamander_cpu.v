@@ -50,7 +50,13 @@ module Salamander_cpu (
 
     output  wire    [15:0]  o_EMU_PROGROM_ADDR,
     input   wire    [15:0]  i_EMU_PROGROM_DATA,
-    output  wire            o_EMU_PROGROM_RDRQ
+    output  wire            o_EMU_PROGROM_RDRQ,
+
+    //RetroAchievements tap: main CPU work RAM writes (0x080000-0x087FFF)
+    output  wire            o_RA_WR,        //write strobe (level, per MCLK)
+    output  wire    [14:1]  o_RA_ADDR,
+    output  wire    [15:0]  o_RA_DO,
+    output  wire    [1:0]   o_RA_BE         //{UDS, LDS} active high
 );
 
 
@@ -343,6 +349,10 @@ assign  datarom_q = i_EMU_DATAROM_DATA;
 assign  o_EMU_DATAROM_RDRQ = datarom_rd;
 
 wire    [15:0]  workram_q;
+assign  o_RA_WR   = workram_cs & ~maincpu_r_nw & ~(maincpu_uds_n & maincpu_lds_n);
+assign  o_RA_ADDR = maincpu_addr[14:1];
+assign  o_RA_DO   = maincpu_do;
+assign  o_RA_BE   = {~maincpu_uds_n, ~maincpu_lds_n};
 Salamander_SRAM #(.AW(14), .DW(8), .simhexfile()) u_workram_hi (
     .i_MCLK                     (i_EMU_MCLK                 ),
     .i_ADDR                     (maincpu_addr[14:1]         ),

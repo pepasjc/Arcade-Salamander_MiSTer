@@ -7,6 +7,8 @@ set_global_assignment -name VERILOG_FILE rtl/Salamander_top.v
 set_global_assignment -name VERILOG_FILE rtl/Salamander_cpu.v
 set_global_assignment -name VERILOG_FILE rtl/Salamander_sound.v
 set_global_assignment -name VERILOG_FILE rtl/Salamander_lpf.v
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/salamander_ra_tap.sv
+set_global_assignment -name VERILOG_FILE rtl/salamander_ra_mirror.v
 set_global_assignment -name VERILOG_FILE rtl/Salamander_components/Salamander_PROM.v
 set_global_assignment -name VERILOG_FILE rtl/Salamander_components/Salamander_SRAM.v
 set_global_assignment -name QIP_FILE rtl/GX400_video/GX400_video.qip

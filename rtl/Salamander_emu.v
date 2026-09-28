@@ -42,7 +42,13 @@ module Salamander_emu (
     output  wire            sdram_ncs,
     output  wire            sdram_cke,
 
-    output  wire            debug
+    output  wire            debug,
+
+    //RetroAchievements tap: main CPU work RAM writes (i_EMU_MCLK domain)
+    output  wire            o_RA_WR,
+    output  wire    [14:1]  o_RA_ADDR,
+    output  wire    [15:0]  o_RA_DO,
+    output  wire    [1:0]   o_RA_BE
 );
 
 
@@ -515,7 +521,12 @@ Salamander_top gameboard_top (
     .i_EMU_PROM_WR              (prog_bram_wr               ),
     
     .i_EMU_PROM_SNDROM_CS       (prog_bram_sndrom_cs        ),
-    .i_EMU_PROM_VLMROM_CS       (prog_bram_vlmrom_cs        )
+    .i_EMU_PROM_VLMROM_CS       (prog_bram_vlmrom_cs        ),
+
+    .o_RA_WR                    (o_RA_WR                    ),
+    .o_RA_ADDR                  (o_RA_ADDR                  ),
+    .o_RA_DO                    (o_RA_DO                    ),
+    .o_RA_BE                    (o_RA_BE                    )
 );
 
 endmodule

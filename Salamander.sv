@@ -180,7 +180,6 @@ assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
 
 assign HDMI_BOB_DEINT = 0;
 assign LED_DISK = 0;
@@ -222,7 +221,7 @@ wire    [127:0] status; //status bits
 
 `include "build_id.v" 
 localparam CONF_STR = {
-    "Salamander;",
+    "RA_Salamander;",
     "-;",
 	"O9,Player 1 Ship,Vic Viper,Lord British;",
     "-;",
@@ -325,6 +324,12 @@ wire            ship_sides_swap = status[9];
 wire    [15:0]  joystick_left  = ship_sides_swap ? joystick_1 : joystick_0;
 wire    [15:0]  joystick_right = ship_sides_swap ? joystick_0 : joystick_1;
 
+// RetroAchievements tap (see RETROACHIEVEMENTS below)
+wire            ra_cpu_wr;
+wire    [14:1]  ra_cpu_addr;
+wire    [15:0]  ra_cpu_do;
+wire    [1:0]   ra_cpu_be;
+
 Salamander_emu gameboard_top (
     .i_EMU_MCLK                 (CLK72M                     ),
 	.i_EMU_SCLK                 (CLK57M                     ),
@@ -366,8 +371,73 @@ Salamander_emu gameboard_top (
     .sdram_ncs                  (SDRAM_nCS                  ),
     .sdram_cke                  (SDRAM_CKE                  ),
 
-    .debug                      (LED_USER                   )
+    .debug                      (LED_USER                   ),
+
+    .o_RA_WR                    (ra_cpu_wr                  ),
+    .o_RA_ADDR                  (ra_cpu_addr                ),
+    .o_RA_DO                    (ra_cpu_do                  ),
+    .o_RA_BE                    (ra_cpu_be                  )
 );
+
+
+
+///////////////////////////////////////////////////////////
+//////  RETROACHIEVEMENTS
+////
+// RAM mirror for the RetroAchievements fork of Main_MiSTer
+// (salamander_ra_mirror.v, from jotego's jtframe via the RA jtcores fork).
+// The main 68000 work RAM (0x080000-0x087FFF) is shadowed in BRAM as
+// FinalBurn Neo's d_nemesis "All Ram" block starts (Drv68KRAM0 at RA 0x0000,
+// FBNeo 16-bit word byte order; salamander_ra_tap.sv) and copied to DDR
+// 0x3D000000 once per VBlank. The core has no other DDR client, so the
+// mirror owns the port; it is held off during ROM download.
+
+wire    [14:0]  ra_wr_word;
+wire    [15:0]  ra_wr_din;
+wire    [1:0]   ra_wr_be;
+
+salamander_ra_tap ra_tap (
+    .clk                        (CLK72M                     ),
+    .wr                         (ra_cpu_wr                  ),
+    .addr                       (ra_cpu_addr                ),
+    .din                        (ra_cpu_do                  ),
+    .be                         (ra_cpu_be                  ),
+    .ra_wr_word                 (ra_wr_word                 ),
+    .ra_wr_din                  (ra_wr_din                  ),
+    .ra_wr_be                   (ra_wr_be                   )
+);
+
+wire    [7:0]   ra_burstcnt, ra_be;
+wire    [28:0]  ra_addr;
+wire    [63:0]  ra_din;
+wire            ra_we, ra_active;
+
+salamander_ra_mirror #(.AW(15)) ra_mirror (
+    .rst                        (master_reset               ),
+    .clk                        (CLK72M                     ),
+    .lvbl                       (~vblank                    ),
+    .hold                       (ioctl_download             ),
+    .start_ok                   (1'b1                       ),
+    .wr_clk                     (CLK72M                     ),
+    .wr_word                    (ra_wr_word                 ),
+    .wr_din                     (ra_wr_din                  ),
+    .wr_be                      (ra_wr_be                   ),
+    .active                     (ra_active                  ),
+    .ddr_busy                   (DDRAM_BUSY                 ),
+    .ddr_burstcnt               (ra_burstcnt                ),
+    .ddr_addr                   (ra_addr                    ),
+    .ddr_we                     (ra_we                      ),
+    .ddr_be                     (ra_be                      ),
+    .ddr_din                    (ra_din                     )
+);
+
+assign DDRAM_CLK      = CLK72M;
+assign DDRAM_BURSTCNT = ra_burstcnt;
+assign DDRAM_ADDR     = ra_addr;
+assign DDRAM_DIN      = ra_din;
+assign DDRAM_BE       = ra_be;
+assign DDRAM_WE       = ra_we;
+assign DDRAM_RD       = 1'b0;
 
 
 

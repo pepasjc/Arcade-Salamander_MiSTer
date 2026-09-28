@@ -42,7 +42,13 @@ module Salamander_top (
     input   wire            i_EMU_PROM_WR,
     
     input   wire            i_EMU_PROM_SNDROM_CS,
-    input   wire            i_EMU_PROM_VLMROM_CS
+    input   wire            i_EMU_PROM_VLMROM_CS,
+
+    //RetroAchievements tap: main CPU work RAM writes
+    output  wire            o_RA_WR,
+    output  wire    [14:1]  o_RA_ADDR,
+    output  wire    [15:0]  o_RA_DO,
+    output  wire    [1:0]   o_RA_BE
 );
 
 
@@ -194,7 +200,12 @@ Salamander_cpu u_cpuboard (
 
     .o_EMU_PROGROM_ADDR         (o_EMU_PROGROM_ADDR         ),
     .i_EMU_PROGROM_DATA         (i_EMU_PROGROM_DATA         ),
-    .o_EMU_PROGROM_RDRQ         (o_EMU_PROGROM_RDRQ         )
+    .o_EMU_PROGROM_RDRQ         (o_EMU_PROGROM_RDRQ         ),
+
+    .o_RA_WR                    (o_RA_WR                    ),
+    .o_RA_ADDR                  (o_RA_ADDR                  ),
+    .o_RA_DO                    (o_RA_DO                    ),
+    .o_RA_BE                    (o_RA_BE                    )
 );
 
 
